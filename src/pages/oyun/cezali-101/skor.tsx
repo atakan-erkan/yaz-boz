@@ -466,7 +466,7 @@ export default function Cezali101Skor() {
                 {/* Cezalı 101 Cezası Ekleme */}
                 <div className="bg-[#7B4B28] rounded-lg p-4 shadow-2xl border border-[#D4AF37]">
                     <h2 className="text-xl font-serif font-bold text-[#D4AF37] text-center mb-4">
-                        ⚠️ Cezalı 101 Cezası Ekle
+                        ⚠️ Ceza Ekle
                     </h2>
                     <div className="space-y-3">
                         <select
