@@ -15,6 +15,12 @@ export default function SkorEkrani() {
     const [oyunVerisi, setOyunVerisi] = useState<OyunVerisi | null>(null);
     const [yeniSkorlar, setYeniSkorlar] = useState<string[]>([]);
 
+    // Düzenleme modu state'leri
+    const [duzenlemeModu, setDuzenlemeModu] = useState<"kapali" | "skor">("kapali");
+    const [duzenlenecekOyuncu, setDuzenlenecekOyuncu] = useState<number>(-1);
+    const [duzenlenecekTur, setDuzenlenecekTur] = useState<number>(-1);
+    const [duzenlemeDegeri, setDuzenlemeDegeri] = useState<string>("");
+
     const storageKey = `oyunVerisi_${oyunAdi}`;
 
     useEffect(() => {
@@ -44,6 +50,43 @@ export default function SkorEkrani() {
         saveToStorage(storageKey, guncelVeri);
         setOyunVerisi(guncelVeri);
         setYeniSkorlar(Array(guncelVeri.oyuncular.length).fill(""));
+    };
+
+    // Skor düzenleme fonksiyonu
+    const skorDuzenle = () => {
+        if (!oyunVerisi || duzenlenecekOyuncu === -1 || duzenlenecekTur === -1 || !duzenlemeDegeri) return;
+
+        const yeniDeger = parseInt(duzenlemeDegeri);
+        if (isNaN(yeniDeger)) return;
+
+        const guncellenmisSkorlar = [...oyunVerisi.skorlar];
+        guncellenmisSkorlar[duzenlenecekOyuncu] = [...guncellenmisSkorlar[duzenlenecekOyuncu]];
+        guncellenmisSkorlar[duzenlenecekOyuncu][duzenlenecekTur] = yeniDeger;
+
+        const guncelVeri: OyunVerisi = {
+            ...oyunVerisi,
+            skorlar: guncellenmisSkorlar,
+        };
+
+        saveToStorage(storageKey, guncelVeri);
+        setOyunVerisi(guncelVeri);
+        duzenlemeModunuKapat();
+    };
+
+    // Düzenleme modunu kapatma fonksiyonu
+    const duzenlemeModunuKapat = () => {
+        setDuzenlemeModu("kapali");
+        setDuzenlenecekOyuncu(-1);
+        setDuzenlenecekTur(-1);
+        setDuzenlemeDegeri("");
+    };
+
+    // Skor düzenleme modunu açma
+    const skorDuzenlemeBaslat = (oyuncuIndex: number, turIndex: number) => {
+        setDuzenlemeModu("skor");
+        setDuzenlenecekOyuncu(oyuncuIndex);
+        setDuzenlenecekTur(turIndex);
+        setDuzenlemeDegeri(oyunVerisi?.skorlar[oyuncuIndex]?.[turIndex]?.toString() || "0");
     };
 
     const skorlariSifirla = () => {
@@ -82,8 +125,42 @@ export default function SkorEkrani() {
                 <Link href="/" className="text-3xl font-serif font-bold text-[#D4AF37] drop-shadow-lg">
                     🃏 {oyunVerisi.oyun.toUpperCase()} Skor Tablosu 🃏
                 </Link>
-
             </div>
+
+            {/* Düzenleme Modu Bildirimi */}
+            {duzenlemeModu !== "kapali" && (
+                <div className="max-w-2xl mx-auto mb-6">
+                    <div className="bg-[#D4AF37] rounded-lg p-4 shadow-2xl border-2 border-[#8B2F2F] text-center">
+                        <h3 className="text-lg font-serif font-bold text-[#3E2723] mb-2">
+                            ✏️ Skor Düzenleme Modu
+                        </h3>
+                        <p className="text-[#3E2723] mb-3">
+                            {oyunVerisi.oyuncular[duzenlenecekOyuncu]} - {duzenlenecekTur + 1}. Tur
+                        </p>
+                        <div className="flex gap-2 justify-center">
+                            <input
+                                type="number"
+                                value={duzenlemeDegeri}
+                                onChange={(e) => setDuzenlemeDegeri(e.target.value)}
+                                className="w-24 p-2 border border-[#8B2F2F] rounded-lg bg-[#F3E9DD] text-[#3E2723] text-center font-medium"
+                                placeholder="0"
+                            />
+                            <button
+                                onClick={skorDuzenle}
+                                className="bg-[#3B5D3A] text-white px-4 py-2 rounded-lg hover:bg-[#25401F] transition-all duration-300 font-bold"
+                            >
+                                ✅ Kaydet
+                            </button>
+                            <button
+                                onClick={duzenlemeModunuKapat}
+                                className="bg-[#8B2F2F] text-white px-4 py-2 rounded-lg hover:bg-[#5C1A1B] transition-all duration-300 font-bold"
+                            >
+                                ❌ İptal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Skor tablosu */}
             <div className="max-w-4xl mx-auto mb-6">
@@ -106,7 +183,12 @@ export default function SkorEkrani() {
                                     <tr key={tur} className={tur % 2 === 0 ? "bg-[#F3E9DD]" : "bg-[#EAD7C1] hover:bg-[#F5E9DA]"}>
                                         <td className="border border-[#D4AF37] px-3 py-2 font-bold text-[#D4AF37]">{tur + 1}</td>
                                         {oyunVerisi.oyuncular.map((_, oyuncuIndex) => (
-                                            <td key={oyuncuIndex} className="border border-[#D4AF37] px-3 py-2 text-[#3E2723]">
+                                            <td
+                                                key={oyuncuIndex}
+                                                className="border border-[#D4AF37] px-3 py-2 text-[#3E2723] cursor-pointer hover:bg-[#D4AF37] hover:text-[#3E2723] transition-all duration-200"
+                                                onClick={() => skorDuzenlemeBaslat(oyuncuIndex, tur)}
+                                                title="Skoru düzenlemek için tıklayın"
+                                            >
                                                 {oyunVerisi.skorlar[oyuncuIndex][tur]}
                                             </td>
                                         ))}
@@ -187,6 +269,7 @@ export default function SkorEkrani() {
             <div className="text-center text-[#3E2723] text-sm opacity-75 mt-8">
                 <p>☕ Çay servisi mevcuttur</p>
                 <p>🎯 Dostluk ve eğlence garantili</p>
+                <p className="mt-2 text-xs">💡 İpucu: Skorları düzenlemek için tablodaki değerlere tıklayın!</p>
             </div>
         </div>
     );
