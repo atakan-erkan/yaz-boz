@@ -532,13 +532,46 @@ export default function Cezali101Skor() {
                             ))}
                         </select>
 
-                        <input
-                            type="number"
-                            placeholder="Ceza puanı"
-                            value={cezaSayisi}
-                            onChange={(e) => setCezaSayisi(e.target.value)}
-                            className="w-full p-2 border border-[#D4AF37] rounded-lg bg-[#F3E9DD] text-[#3E2723] placeholder-[#A0A0A0] focus:border-[#D4AF37] focus:outline-none font-medium"
-                        />
+                        <div className="flex gap-2">
+                            <input
+                                type="number"
+                                placeholder="Ceza puanı"
+                                value={cezaSayisi}
+                                onChange={(e) => setCezaSayisi(e.target.value)}
+                                className="flex-1 p-2 border border-[#D4AF37] rounded-lg bg-[#F3E9DD] text-[#3E2723] placeholder-[#A0A0A0] focus:border-[#D4AF37] focus:outline-none font-medium"
+                            />
+                            <button
+                                onClick={() => {
+                                    const mevcut = parseInt(cezaSayisi) || 0;
+                                    setCezaSayisi((mevcut + 10).toString());
+                                }}
+                                className="px-3 py-2 bg-[#3B5D3A] text-white rounded-lg hover:bg-[#25401F] transition-all duration-200 font-bold text-sm"
+                                title="10 artır"
+                            >
+                                +10
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const mevcut = parseInt(cezaSayisi) || 0;
+                                    setCezaSayisi((mevcut - 10).toString());
+                                }}
+                                className="px-3 py-2 bg-[#3B5D3A] text-white rounded-lg hover:bg-[#25401F] transition-all duration-200 font-bold text-sm"
+                                title="10 azalt"
+                            >
+                                -10
+                            </button>
+                        </div>
+
+                        {/* Hızlı Ceza Butonu */}
+                        <div className="flex justify-center">
+                            <button
+                                onClick={() => setCezaSayisi("100")}
+                                className="py-2 px-6 bg-[#D4AF37] text-[#3E2723] rounded-lg hover:bg-[#B8941F] transition-all duration-200 font-bold text-lg"
+                                title="100 puan ceza (en çok kullanılan)"
+                            >
+                                100 Puan Ceza
+                            </button>
+                        </div>
 
                         {cezaSayisi && !isNaN(parseInt(cezaSayisi)) && (
                             <div className="text-sm text-white text-center bg-[#8B2F2F] rounded-lg p-2">
@@ -563,19 +596,76 @@ export default function Cezali101Skor() {
                     </h2>
                     <div className="space-y-3">
                         {oyunVerisi.oyuncular.map((oyuncu, i) => (
-                            <input
-                                key={i}
-                                type="number"
-                                placeholder={`${oyuncu} puan`}
-                                value={yeniSkorlar[i]}
-                                onChange={(e) => {
-                                    const yeni = [...yeniSkorlar];
-                                    yeni[i] = e.target.value;
-                                    setYeniSkorlar(yeni);
-                                }}
-                                className="w-full p-2 border border-[#D4AF37] rounded-lg bg-[#F3E9DD] text-[#3E2723] placeholder-[#A0A0A0] focus:border-[#D4AF37] focus:outline-none font-medium disabled:bg-[#A0A0A0] disabled:cursor-not-allowed"
-                                disabled={kazanan?.oyunBitti}
-                            />
+                            <div key={i} className="space-y-2">
+                                <div className="flex gap-2">
+                                    <input
+                                        type="number"
+                                        placeholder={`${oyuncu} puan`}
+                                        value={yeniSkorlar[i]}
+                                        onChange={(e) => {
+                                            const yeni = [...yeniSkorlar];
+                                            yeni[i] = e.target.value;
+                                            setYeniSkorlar(yeni);
+                                        }}
+                                        className="flex-1 p-2 border border-[#D4AF37] rounded-lg bg-[#F3E9DD] text-[#3E2723] placeholder-[#A0A0A0] focus:border-[#D4AF37] focus:outline-none font-medium disabled:bg-[#A0A0A0] disabled:cursor-not-allowed"
+                                        disabled={kazanan?.oyunBitti}
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            const yeni = [...yeniSkorlar];
+                                            const mevcutDeger = parseInt(yeni[i]) || 0;
+                                            yeni[i] = (mevcutDeger * 2).toString();
+                                            setYeniSkorlar(yeni);
+                                        }}
+                                        className="px-3 py-2 bg-[#8B2F2F] text-white rounded-lg hover:bg-[#5C1A1B] transition-all duration-200 font-bold text-sm"
+                                        title="2 katına çıkar"
+                                        disabled={kazanan?.oyunBitti}
+                                    >
+                                        2×
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const yeni = [...yeniSkorlar];
+                                            const mevcutDeger = parseInt(yeni[i]) || 0;
+                                            yeni[i] = (mevcutDeger * 4).toString();
+                                            setYeniSkorlar(yeni);
+                                        }}
+                                        className="px-3 py-2 bg-[#8B2F2F] text-white rounded-lg hover:bg-[#5C1A1B] transition-all duration-200 font-bold text-sm"
+                                        title="4 katına çıkar"
+                                        disabled={kazanan?.oyunBitti}
+                                    >
+                                        4×
+                                    </button>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => {
+                                            const yeni = [...yeniSkorlar];
+                                            const mevcutDeger = parseInt(yeni[i]) || 0;
+                                            yeni[i] = (mevcutDeger + 200).toString();
+                                            setYeniSkorlar(yeni);
+                                        }}
+                                        className="flex-1 py-1 bg-[#3B5D3A] text-white rounded-lg hover:bg-[#25401F] transition-all duration-200 font-bold text-xs"
+                                        title="Eli açmama cezası (200 puan)"
+                                        disabled={kazanan?.oyunBitti}
+                                    >
+                                        +200 (Eli Açmama)
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const yeni = [...yeniSkorlar];
+                                            const mevcutDeger = parseInt(yeni[i]) || 0;
+                                            yeni[i] = (mevcutDeger - 100).toString();
+                                            setYeniSkorlar(yeni);
+                                        }}
+                                        className="flex-1 py-1 bg-[#3B5D3A] text-white rounded-lg hover:bg-[#25401F] transition-all duration-200 font-bold text-xs"
+                                        title="Bitti cezası (-100 puan)"
+                                        disabled={kazanan?.oyunBitti}
+                                    >
+                                        -100 (Bitti)
+                                    </button>
+                                </div>
+                            </div>
                         ))}
 
                         <button
@@ -623,6 +713,8 @@ export default function Cezali101Skor() {
                 <p>☕ Çay servisi mevcuttur</p>
                 <p>🎯 Dostluk ve eğlence garantili</p>
                 <p className="mt-2 text-xs">💡 İpucu: Skorları düzenlemek için tablodaki değerlere, isimleri düzenlemek için oyuncu isimlerine tıklayın!</p>
+                <p className="mt-1 text-xs">🎮 Hızlı Skor: 2×, 4×, +200 (Eli Açmama), -100 (Bitti) butonlarını kullanın!</p>
+                <p className="mt-1 text-xs">⚠️ Hızlı Ceza: 100 puan butonu, +10/-10 ile ayarlama yapabilirsiniz!</p>
             </div>
         </div>
     );
