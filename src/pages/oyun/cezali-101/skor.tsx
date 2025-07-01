@@ -593,7 +593,7 @@ export default function Cezali101Skor() {
                             disabled={cezaAlan === -1 || !cezaSayisi}
                             className="w-full bg-[#8B2F2F] text-white py-2 rounded-lg shadow-lg hover:bg-[#5C1A1B] transition-all duration-300 transform hover:scale-105 border border-[#8B2F2F] font-bold disabled:bg-[#A0A0A0] disabled:cursor-not-allowed"
                         >
-                            ⚠️ {cezaAlan !== -1 ? `${oyunVerisi.oyuncular[cezaAlan]}'e Ceza Ekle` : 'Cezayı Ekle'}
+                            ⚠️ {cezaAlan !== -1 ? `${oyunVerisi.oyuncular[cezaAlan]} Ceza Ekle` : 'Cezayı Ekle'}
                         </button>
                     </div>
                 </div>
