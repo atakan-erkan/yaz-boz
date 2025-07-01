@@ -295,6 +295,8 @@ export default function Cezali101Skor() {
                             ) : (
                                 <input
                                     type="number"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
                                     value={duzenlemeDegeri}
                                     onChange={(e) => {
                                         const value = e.target.value;
@@ -556,6 +558,8 @@ export default function Cezali101Skor() {
                         <div className="flex gap-2">
                             <input
                                 type="number"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                                 placeholder="Ceza puanı"
                                 value={cezaSayisi}
                                 onChange={(e) => {
@@ -633,6 +637,8 @@ export default function Cezali101Skor() {
                                 <div className="flex gap-2">
                                     <input
                                         type="number"
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
                                         placeholder={`${oyuncu} puan`}
                                         value={yeniSkorlar[i]}
                                         onChange={(e) => {

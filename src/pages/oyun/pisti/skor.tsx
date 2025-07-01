@@ -209,6 +209,8 @@ export default function PistiSkor() {
                             ) : (
                                 <input
                                     type="number"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
                                     value={duzenlemeDegeri}
                                     onChange={(e) => {
                                         const value = e.target.value;
@@ -355,6 +357,8 @@ export default function PistiSkor() {
                             <input
                                 key={i}
                                 type="number"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                                 className="w-full p-3 border-2 border-[#D4AF37] rounded-lg bg-[#F3E9DD] text-[#3E2723] placeholder-[#A0A0A0] focus:border-[#D4AF37] focus:outline-none font-medium"
                                 placeholder={`${oyuncu} puanı`}
                                 value={yeniSkorlar[i]}
