@@ -180,7 +180,19 @@ export default function SkorEkrani() {
                                 <input
                                     type="number"
                                     value={duzenlemeDegeri}
-                                    onChange={(e) => setDuzenlemeDegeri(e.target.value)}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        // Sadece sayı ve boş string kabul et
+                                        if (value === '' || /^\d+$/.test(value)) {
+                                            setDuzenlemeDegeri(value);
+                                        }
+                                    }}
+                                    onKeyPress={(e) => {
+                                        // Sadece sayı tuşlarına izin ver
+                                        if (!/[0-9]/.test(e.key)) {
+                                            e.preventDefault();
+                                        }
+                                    }}
                                     className="w-24 p-2 border border-[#8B2F2F] rounded-lg bg-[#F3E9DD] text-[#3E2723] text-center font-medium"
                                     placeholder="0"
                                 />
@@ -272,9 +284,19 @@ export default function SkorEkrani() {
                                 placeholder={`${oyuncu} skoru`}
                                 value={yeniSkorlar[i]}
                                 onChange={(e) => {
-                                    const yeni = [...yeniSkorlar];
-                                    yeni[i] = e.target.value;
-                                    setYeniSkorlar(yeni);
+                                    const value = e.target.value;
+                                    // Sadece sayı ve boş string kabul et
+                                    if (value === '' || /^\d+$/.test(value)) {
+                                        const yeni = [...yeniSkorlar];
+                                        yeni[i] = value;
+                                        setYeniSkorlar(yeni);
+                                    }
+                                }}
+                                onKeyPress={(e) => {
+                                    // Sadece sayı tuşlarına izin ver
+                                    if (!/[0-9]/.test(e.key)) {
+                                        e.preventDefault();
+                                    }
                                 }}
                             />
                         ))}
