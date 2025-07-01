@@ -521,16 +521,25 @@ export default function Cezali101Skor() {
                         ⚠️ Ceza Ekle
                     </h2>
                     <div className="space-y-3">
-                        <select
-                            value={cezaAlan}
-                            onChange={(e) => setCezaAlan(parseInt(e.target.value))}
-                            className="w-full p-2 border border-[#D4AF37] rounded-lg bg-[#F3E9DD] text-[#3E2723] font-medium focus:border-[#D4AF37] focus:outline-none"
-                        >
-                            <option value={-1}>Cezayı Alan Oyuncu Seçin</option>
-                            {oyunVerisi.oyuncular.map((oyuncu, i) => (
-                                <option key={i} value={i}>{oyuncu}</option>
-                            ))}
-                        </select>
+                        {/* Oyuncu Seçimi */}
+                        <div className="space-y-2">
+                            <p className="text-[#D4AF37] font-bold text-center">Cezayı Alan Oyuncu:</p>
+                            <div className="grid grid-cols-2 gap-2">
+                                {oyunVerisi.oyuncular.map((oyuncu, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setCezaAlan(i)}
+                                        className={`py-2 px-3 rounded-lg font-bold transition-all duration-200 ${cezaAlan === i
+                                            ? 'bg-[#D4AF37] text-[#3E2723] shadow-lg'
+                                            : 'bg-[#8B2F2F] text-white hover:bg-[#5C1A1B]'
+                                            }`}
+                                        title={`${oyuncu} için ceza ekle`}
+                                    >
+                                        {oyuncu}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
 
                         <div className="flex gap-2">
                             <input
@@ -584,7 +593,7 @@ export default function Cezali101Skor() {
                             disabled={cezaAlan === -1 || !cezaSayisi}
                             className="w-full bg-[#8B2F2F] text-white py-2 rounded-lg shadow-lg hover:bg-[#5C1A1B] transition-all duration-300 transform hover:scale-105 border border-[#8B2F2F] font-bold disabled:bg-[#A0A0A0] disabled:cursor-not-allowed"
                         >
-                            ⚠️ Cezayı Ekle
+                            ⚠️ {cezaAlan !== -1 ? `${oyunVerisi.oyuncular[cezaAlan]}'e Ceza Ekle` : 'Cezayı Ekle'}
                         </button>
                     </div>
                 </div>
