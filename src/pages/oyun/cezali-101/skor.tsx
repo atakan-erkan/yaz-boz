@@ -698,7 +698,7 @@ export default function Cezali101Skor() {
                                         title="Eli açmama cezası (200 puan)"
                                         disabled={kazanan?.oyunBitti}
                                     >
-                                        +200 (Eli Açmama)
+                                        +200
                                     </button>
                                     <button
                                         onClick={() => {
@@ -711,7 +711,7 @@ export default function Cezali101Skor() {
                                         title="Bitti cezası (-100 puan)"
                                         disabled={kazanan?.oyunBitti}
                                     >
-                                        -100 (Bitti)
+                                        -100
                                     </button>
                                 </div>
                             </div>
@@ -762,7 +762,7 @@ export default function Cezali101Skor() {
                 <p>☕ Çay servisi mevcuttur</p>
                 <p>🎯 Dostluk ve eğlence garantili</p>
                 <p className="mt-2 text-xs">💡 İpucu: Skorları düzenlemek için tablodaki değerlere, isimleri düzenlemek için oyuncu isimlerine tıklayın!</p>
-                <p className="mt-1 text-xs">🎮 Hızlı Skor: 2×, 4×, +200 (Eli Açmama), -100 (Bitti) butonlarını kullanın!</p>
+                <p className="mt-1 text-xs">🎮 Hızlı Skor: 2×, 4×, +200, -100 butonlarını kullanın!</p>
                 <p className="mt-1 text-xs">⚠️ Hızlı Ceza: 100 puan butonu, +10/-10 ile ayarlama yapabilirsiniz!</p>
             </div>
         </div>
