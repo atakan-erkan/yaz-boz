@@ -37,6 +37,14 @@ export default function PistiSkor() {
 
     const skorEkle = () => {
         if (!oyunVerisi) return;
+
+        // Boş skor kontrolü
+        const bosSkorlar = yeniSkorlar.filter(skor => skor.trim() === "");
+        if (bosSkorlar.length > 0) {
+            alert("⚠️ Lütfen tüm oyuncuların skorlarını girin!");
+            return;
+        }
+
         const sayilar = yeniSkorlar.map((s) => parseInt(s) || 0);
         const guncellenmisSkorlar = oyunVerisi.skorlar.map((skorlar, i) => [
             ...skorlar,
