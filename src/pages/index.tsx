@@ -192,7 +192,8 @@ export default function Home() {
                           );
                         } else if (oyun.oyunAdi === "Cezalı 101" && oyun.cezalar) {
                           const turSayisi = oyun.skorlar[0]?.length || 0;
-                          const yuzde = Math.min((turSayisi / 11) * 100, 100);
+                          const hedefElSayisi = oyun.elSayisi || 9;
+                          const yuzde = Math.min((turSayisi / hedefElSayisi) * 100, 100);
                           return (
                             <div className="mt-2">
                               <div className="bg-[#EAD7C1] rounded-full h-2 mb-1">
@@ -202,7 +203,7 @@ export default function Home() {
                                 ></div>
                               </div>
                               <p className="text-[#8B2F2F] text-xs text-center">
-                                El: {turSayisi}/11 ({yuzde.toFixed(0)}%)
+                                El: {turSayisi}/{hedefElSayisi} ({yuzde.toFixed(0)}%)
                               </p>
                             </div>
                           );
