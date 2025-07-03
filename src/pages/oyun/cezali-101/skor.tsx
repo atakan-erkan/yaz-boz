@@ -8,6 +8,9 @@ type OyunVerisi = {
     oyuncular: string[];
     skorlar: number[][];
     cezalar: number[][]; // Her oyuncunun ceza listesi
+    mesrubatlar?: { [mesrubatTuru: string]: number }; // Genel meşrubat takibi
+    mesrubatFiyatlari?: { [mesrubatTuru: string]: number }; // Meşrubat fiyatları (küsüratlı)
+    elSayisi?: number; // El sayısı (varsayılan 9)
 };
 
 export default function Cezali101Skor() {
@@ -20,11 +23,13 @@ export default function Cezali101Skor() {
     const [cezaSayisi, setCezaSayisi] = useState<string>("");
 
     // Düzenleme modu state'leri
-    const [duzenlemeModu, setDuzenlemeModu] = useState<"kapali" | "skor" | "ceza" | "isim">("kapali");
+    const [duzenlemeModu, setDuzenlemeModu] = useState<"kapali" | "skor" | "ceza" | "isim" | "elSayisi">("kapali");
     const [duzenlenecekOyuncu, setDuzenlenecekOyuncu] = useState<number>(-1);
     const [duzenlenecekTur, setDuzenlenecekTur] = useState<number>(-1);
     const [duzenlenecekCezaIndex, setDuzenlenecekCezaIndex] = useState<number>(-1);
     const [duzenlemeDegeri, setDuzenlemeDegeri] = useState<string>("");
+
+
 
     useEffect(() => {
         const veri = getFromStorage<OyunVerisi>(storageKey);
@@ -32,6 +37,18 @@ export default function Cezali101Skor() {
             // Eğer cezalar yoksa, eski veriyi yeni formata çevir
             if (!veri.cezalar) {
                 veri.cezalar = Array(veri.oyuncular.length).fill([]).map(() => []);
+            }
+            // Eğer meşrubatlar yoksa, yeni formata çevir
+            if (!veri.mesrubatlar) {
+                veri.mesrubatlar = {};
+            }
+            // Eğer meşrubat fiyatları yoksa, yeni formata çevir
+            if (!veri.mesrubatFiyatlari) {
+                veri.mesrubatFiyatlari = {};
+            }
+            // Eğer el sayısı yoksa, varsayılan 9 olarak ayarla
+            if (!veri.elSayisi) {
+                veri.elSayisi = 9;
             }
             setOyunVerisi(veri);
             setYeniSkorlar(Array(veri.oyuncular.length).fill(""));
@@ -154,6 +171,29 @@ export default function Cezali101Skor() {
         setDuzenlemeDegeri("");
     };
 
+    // El sayısı düzenleme fonksiyonu
+    const elSayisiDuzenle = () => {
+        if (!oyunVerisi || !duzenlemeDegeri) return;
+
+        const yeniElSayisi = parseInt(duzenlemeDegeri);
+        if (isNaN(yeniElSayisi) || yeniElSayisi <= 0) return;
+
+        const guncelVeri: OyunVerisi = {
+            ...oyunVerisi,
+            elSayisi: yeniElSayisi,
+        };
+
+        saveToStorage(storageKey, guncelVeri);
+        setOyunVerisi(guncelVeri);
+        duzenlemeModunuKapat();
+    };
+
+    // El sayısı düzenleme modunu açma
+    const elSayisiDuzenlemeBaslat = () => {
+        setDuzenlemeModu("elSayisi");
+        setDuzenlemeDegeri(oyunVerisi?.elSayisi?.toString() || "9");
+    };
+
     // Skor düzenleme modunu açma
     const skorDuzenlemeBaslat = (oyuncuIndex: number, turIndex: number) => {
         setDuzenlemeModu("skor");
@@ -197,12 +237,75 @@ export default function Cezali101Skor() {
         setDuzenlemeDegeri(oyunVerisi?.oyuncular[oyuncuIndex] || "");
     };
 
+    // Meşrubat ekleme fonksiyonu
+    const mesrubatEkle = (mesrubatTuru: string, miktar: number = 1) => {
+        if (!oyunVerisi) return;
+
+        const guncellenmisMesrubatlar = { ...oyunVerisi.mesrubatlar };
+
+        if (!guncellenmisMesrubatlar[mesrubatTuru]) {
+            guncellenmisMesrubatlar[mesrubatTuru] = 0;
+        }
+
+        guncellenmisMesrubatlar[mesrubatTuru] += miktar;
+
+        const guncelVeri: OyunVerisi = {
+            ...oyunVerisi,
+            mesrubatlar: guncellenmisMesrubatlar,
+        };
+
+        saveToStorage(storageKey, guncelVeri);
+        setOyunVerisi(guncelVeri);
+    };
+
+
+
+    // Meşrubat çıkarma fonksiyonu
+    const mesrubatCikar = (mesrubatTuru: string, miktar: number = 1) => {
+        if (!oyunVerisi) return;
+
+        const guncellenmisMesrubatlar = { ...oyunVerisi.mesrubatlar };
+
+        if (!guncellenmisMesrubatlar[mesrubatTuru]) {
+            return;
+        }
+
+        guncellenmisMesrubatlar[mesrubatTuru] = Math.max(0, guncellenmisMesrubatlar[mesrubatTuru] - miktar);
+
+        const guncelVeri: OyunVerisi = {
+            ...oyunVerisi,
+            mesrubatlar: guncellenmisMesrubatlar,
+        };
+
+        saveToStorage(storageKey, guncelVeri);
+        setOyunVerisi(guncelVeri);
+    };
+
+    // Meşrubat fiyat güncelleme fonksiyonu
+    const mesrubatFiyatGuncelle = (mesrubatTuru: string, fiyat: number) => {
+        if (!oyunVerisi) return;
+
+        const guncellenmisFiyatlar = { ...oyunVerisi.mesrubatFiyatlari };
+        guncellenmisFiyatlar[mesrubatTuru] = fiyat;
+
+        const guncelVeri: OyunVerisi = {
+            ...oyunVerisi,
+            mesrubatFiyatlari: guncellenmisFiyatlar,
+        };
+
+        saveToStorage(storageKey, guncelVeri);
+        setOyunVerisi(guncelVeri);
+    };
+
     const sifirla = () => {
         if (!oyunVerisi) return;
         const temiz = {
             ...oyunVerisi,
             skorlar: Array(oyunVerisi.oyuncular.length).fill([]).map(() => []),
             cezalar: Array(oyunVerisi.oyuncular.length).fill([]).map(() => []),
+            mesrubatlar: {},
+            elSayisi: 9, // El sayısını da sıfırla
+            // Meşrubat fiyatları korunuyor
         };
         saveToStorage(storageKey, temiz);
         setOyunVerisi(temiz);
@@ -225,13 +328,14 @@ export default function Cezali101Skor() {
         }
     };
 
-    // Kazanan kontrolü - 11 el sonucu en yüksek toplam skorlu kaybeder
+    // Kazanan kontrolü - El sayısı kadar el sonucu en yüksek toplam skorlu kaybeder
     const kazananKontrol = () => {
         if (!oyunVerisi) return null;
 
         const turSayisi = oyunVerisi.skorlar[0]?.length || 0;
+        const hedefElSayisi = oyunVerisi.elSayisi || 9;
 
-        if (turSayisi >= 11) {
+        if (turSayisi >= hedefElSayisi) {
             const toplamSkorlar = oyunVerisi.skorlar.map(skor => skor.reduce((a, b) => a + b, 0));
             const toplamCezalar = oyunVerisi.cezalar.map(cezaListesi =>
                 cezaListesi.reduce((toplam, ceza) => toplam + ceza, 0)
@@ -271,7 +375,7 @@ export default function Cezali101Skor() {
                     🃏 Cezalı 101 Skor Tablosu 🃏
                 </Link>
                 <p className="text-[#8B2F2F] text-lg italic">
-                    &ldquo;11 el sonucu en yüksek toplam skorlu kaybeder!&rdquo;
+                    &ldquo;{oyunVerisi?.elSayisi || 9} el sonucu en yüksek toplam skorlu kaybeder!&rdquo;
                 </p>
             </div>
 
@@ -280,14 +384,16 @@ export default function Cezali101Skor() {
                 <div className="max-w-2xl mx-auto mb-6">
                     <div className="bg-[#D4AF37] rounded-lg p-4 shadow-2xl border-2 border-[#8B2F2F] text-center">
                         <h3 className="text-lg font-serif font-bold text-[#3E2723] mb-2">
-                            ✏️ {duzenlemeModu === "skor" ? "Skor Düzenleme" : duzenlemeModu === "ceza" ? "Ceza Düzenleme" : "İsim Düzenleme"} Modu
+                            ✏️ {duzenlemeModu === "skor" ? "Skor Düzenleme" : duzenlemeModu === "ceza" ? "Ceza Düzenleme" : duzenlemeModu === "isim" ? "İsim Düzenleme" : "El Sayısı Düzenleme"} Modu
                         </h3>
                         <p className="text-[#3E2723] mb-3">
                             {duzenlemeModu === "skor"
                                 ? `${oyunVerisi.oyuncular[duzenlenecekOyuncu]} - ${duzenlenecekTur + 1}. Tur`
                                 : duzenlemeModu === "ceza"
                                     ? `${oyunVerisi.oyuncular[duzenlenecekOyuncu]} - ${duzenlenecekCezaIndex + 1}. Ceza`
-                                    : `${oyunVerisi.oyuncular[duzenlenecekOyuncu]} - İsim Düzenleme`
+                                    : duzenlemeModu === "isim"
+                                        ? `${oyunVerisi.oyuncular[duzenlenecekOyuncu]} - İsim Düzenleme`
+                                        : "Hedef El Sayısı Düzenleme"
                             }
                         </p>
                         <div className="flex gap-2 justify-center">
@@ -323,7 +429,7 @@ export default function Cezali101Skor() {
                                 />
                             )}
                             <button
-                                onClick={duzenlemeModu === "skor" ? skorDuzenle : duzenlemeModu === "ceza" ? cezaDuzenle : isimDuzenle}
+                                onClick={duzenlemeModu === "skor" ? skorDuzenle : duzenlemeModu === "ceza" ? cezaDuzenle : duzenlemeModu === "isim" ? isimDuzenle : elSayisiDuzenle}
                                 className="bg-[#3B5D3A] text-white px-4 py-2 rounded-lg hover:bg-[#25401F] transition-all duration-300 font-bold"
                             >
                                 ✅ Kaydet
@@ -358,18 +464,22 @@ export default function Cezali101Skor() {
 
             {/* El Sayısı Göstergesi */}
             <div className="max-w-md mx-auto mb-6">
-                <div className="bg-[#7B4B28] rounded-lg p-4 shadow-2xl border border-[#D4AF37]">
+                <div
+                    className="bg-[#7B4B28] rounded-lg p-4 shadow-2xl border border-[#D4AF37] cursor-pointer hover:bg-[#8B5A2B] transition-all duration-200"
+                    onClick={elSayisiDuzenlemeBaslat}
+                    title="El sayısını düzenlemek için tıklayın"
+                >
                     <h2 className="text-lg font-serif font-bold text-[#D4AF37] text-center mb-3">
                         🎯 El Sayısı
                     </h2>
                     <div className="text-center">
                         <div className="text-2xl font-bold text-[#D4AF37]">
-                            {oyunVerisi.skorlar[0]?.length || 0} / 11
+                            {oyunVerisi.skorlar[0]?.length || 0} / {oyunVerisi.elSayisi || 9}
                         </div>
                         <div className="mt-2 bg-[#EAD7C1] rounded-full h-3">
                             <div
                                 className="bg-[#8B2F2F] h-3 rounded-full transition-all duration-300"
-                                style={{ width: `${Math.min(((oyunVerisi.skorlar[0]?.length || 0) / 11) * 100, 100)}%` }}
+                                style={{ width: `${Math.min(((oyunVerisi.skorlar[0]?.length || 0) / (oyunVerisi.elSayisi || 9)) * 100, 100)}%` }}
                             ></div>
                         </div>
                     </div>
@@ -497,37 +607,41 @@ export default function Cezali101Skor() {
                                 )}
                             </tbody>
                             <tfoot className="bg-[#EAD7C1] text-[#3E2723] font-bold">
-                                <tr>
-                                    <td className="border border-[#D4AF37] px-2 py-1">Toplam Skor</td>
-                                    {oyunVerisi.skorlar.map((skor, i) => (
-                                        <td key={i} className="border border-[#D4AF37] px-2 py-1 bg-[#F3E9DD] text-[#3E2723]">
-                                            {Array.isArray(skor) ? skor.reduce((a, b) => (a || 0) + (b || 0), 0) : 0}
-                                        </td>
-                                    ))}
-                                </tr>
-                                <tr className="bg-[#EAD7C1] text-[#8B2F2F]">
-                                    <td className="border border-[#D4AF37] px-2 py-1">Toplam Cezalar</td>
-                                    {toplamCezalar.map((ceza, i) => (
-                                        <td key={i} className="border border-[#D4AF37] px-2 py-1">
-                                            {ceza}
-                                        </td>
-                                    ))}
-                                </tr>
-                                <tr className="bg-[#D4AF37] text-[#3E2723] font-bold">
-                                    <td className="border border-[#D4AF37] px-2 py-1">Final Skor</td>
-                                    {oyunVerisi.skorlar.map((skor, i) => {
-                                        const toplamSkor = Array.isArray(skor) ? skor.reduce((a, b) => (a || 0) + (b || 0), 0) : 0;
-                                        const toplamCeza = toplamCezalar[i] || 0;
-                                        const finalSkor = Math.floor(toplamSkor + toplamCeza);
-                                        const isKaybeden = kazanan?.kaybedenIndex === i;
-                                        return (
-                                            <td key={i} className={`border border-[#D4AF37] px-2 py-1 ${isKaybeden ? 'bg-[#8B2F2F] text-[#F5E9DA]' : ''}`}>
-                                                {finalSkor}
-                                                {isKaybeden && <span className="ml-1">💀</span>}
-                                            </td>
-                                        );
-                                    })}
-                                </tr>
+                                {(oyunVerisi.skorlar[0]?.length || 0) >= ((oyunVerisi.elSayisi || 9) - 1) && (
+                                    <>
+                                        <tr>
+                                            <td className="border border-[#D4AF37] px-2 py-1">Toplam Skor</td>
+                                            {oyunVerisi.skorlar.map((skor, i) => (
+                                                <td key={i} className="border border-[#D4AF37] px-2 py-1 bg-[#F3E9DD] text-[#3E2723]">
+                                                    {Array.isArray(skor) ? skor.reduce((a, b) => (a || 0) + (b || 0), 0) : 0}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                        <tr className="bg-[#EAD7C1] text-[#8B2F2F]">
+                                            <td className="border border-[#D4AF37] px-2 py-1">Toplam Cezalar</td>
+                                            {toplamCezalar.map((ceza, i) => (
+                                                <td key={i} className="border border-[#D4AF37] px-2 py-1">
+                                                    {ceza}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                        <tr className="bg-[#D4AF37] text-[#3E2723] font-bold">
+                                            <td className="border border-[#D4AF37] px-2 py-1">Final Skor</td>
+                                            {oyunVerisi.skorlar.map((skor, i) => {
+                                                const toplamSkor = Array.isArray(skor) ? skor.reduce((a, b) => (a || 0) + (b || 0), 0) : 0;
+                                                const toplamCeza = toplamCezalar[i] || 0;
+                                                const finalSkor = Math.floor(toplamSkor + toplamCeza);
+                                                const isKaybeden = kazanan?.kaybedenIndex === i;
+                                                return (
+                                                    <td key={i} className={`border border-[#D4AF37] px-2 py-1 ${isKaybeden ? 'bg-[#8B2F2F] text-[#F5E9DA]' : ''}`}>
+                                                        {finalSkor}
+                                                        {isKaybeden && <span className="ml-1">💀</span>}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    </>
+                                )}
                             </tfoot>
                         </table>
                     </div>
@@ -735,6 +849,408 @@ export default function Cezali101Skor() {
                 </div>
             </div>
 
+            {/* Meşrubat Takip Bölümü */}
+            <div className="max-w-4xl mx-auto mt-6">
+                <div className="bg-[#7B4B28] rounded-lg p-4 shadow-2xl border border-[#D4AF37]">
+                    <h2 className="text-xl font-serif font-bold text-[#D4AF37] text-center mb-4">
+                        ☕ Masada İçilen Meşrubatlar
+                    </h2>
+
+                    {/* Meşrubat Butonları */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
+                        {/* Çay */}
+                        <div className="relative">
+                            <button
+                                onClick={() => mesrubatEkle("çay")}
+                                className="w-full bg-[#F3E9DD] hover:bg-[#EAD7C1] rounded-lg p-4 border-2 border-[#D4AF37] transition-all duration-200 transform hover:scale-105 text-center group"
+                                title="Çay ekle"
+                            >
+                                <div className="text-2xl mb-2">☕</div>
+                                <div className="text-[#3E2723] font-bold text-lg">Çay</div>
+                                <div className="text-[#8B2F2F] font-bold text-xl mt-1">
+                                    {oyunVerisi.mesrubatlar?.["çay"] || 0}
+                                </div>
+                                <div className="mt-2">
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="Fiyat"
+                                        value={oyunVerisi.mesrubatFiyatlari?.["çay"] || ""}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
+                                                mesrubatFiyatGuncelle("çay", parseFloat(value) || 0);
+                                            }
+                                        }}
+                                        onKeyPress={(e) => {
+                                            if (!/[0-9.]/.test(e.key)) {
+                                                e.preventDefault();
+                                            }
+                                        }}
+                                        className="w-full p-1 text-center text-sm border border-[#D4AF37] rounded bg-[#F5E9DA] text-[#3E2723] placeholder-[#A0A0A0]"
+                                        title="Çay fiyatı (örn: 7.50)"
+                                    />
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => mesrubatCikar("çay")}
+                                disabled={!oyunVerisi.mesrubatlar?.["çay"]}
+                                className="absolute top-2 right-2 w-6 h-6 bg-[#8B2F2F] text-white rounded-full hover:bg-[#5C1A1B] transition-all duration-200 font-bold text-sm disabled:bg-[#A0A0A0] disabled:cursor-not-allowed shadow-lg"
+                                title="Çay çıkar"
+                            >
+                                🗑️
+                            </button>
+                        </div>
+
+                        {/* Kahve */}
+                        <div className="relative">
+                            <button
+                                onClick={() => mesrubatEkle("kahve")}
+                                className="w-full bg-[#F3E9DD] hover:bg-[#EAD7C1] rounded-lg p-4 border-2 border-[#D4AF37] transition-all duration-200 transform hover:scale-105 text-center group"
+                                title="Kahve ekle"
+                            >
+                                <div className="text-2xl mb-2">☕</div>
+                                <div className="text-[#3E2723] font-bold text-lg">Kahve</div>
+                                <div className="text-[#8B2F2F] font-bold text-xl mt-1">
+                                    {oyunVerisi.mesrubatlar?.["kahve"] || 0}
+                                </div>
+                                <div className="mt-2">
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="Fiyat"
+                                        value={oyunVerisi.mesrubatFiyatlari?.["kahve"] || ""}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
+                                                mesrubatFiyatGuncelle("kahve", parseFloat(value) || 0);
+                                            }
+                                        }}
+                                        onKeyPress={(e) => {
+                                            if (!/[0-9.]/.test(e.key)) {
+                                                e.preventDefault();
+                                            }
+                                        }}
+                                        className="w-full p-1 text-center text-sm border border-[#D4AF37] rounded bg-[#F5E9DA] text-[#3E2723] placeholder-[#A0A0A0]"
+                                        title="Kahve fiyatı (örn: 7.50)"
+                                    />
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => mesrubatCikar("kahve")}
+                                disabled={!oyunVerisi.mesrubatlar?.["kahve"]}
+                                className="absolute top-2 right-2 w-6 h-6 bg-[#8B2F2F] text-white rounded-full hover:bg-[#5C1A1B] transition-all duration-200 font-bold text-sm disabled:bg-[#A0A0A0] disabled:cursor-not-allowed shadow-lg"
+                                title="Kahve çıkar"
+                            >
+                                🗑️
+                            </button>
+                        </div>
+
+                        {/* Ayran */}
+                        <div className="relative">
+                            <button
+                                onClick={() => mesrubatEkle("ayran")}
+                                className="w-full bg-[#F3E9DD] hover:bg-[#EAD7C1] rounded-lg p-4 border-2 border-[#D4AF37] transition-all duration-200 transform hover:scale-105 text-center group"
+                                title="Ayran ekle"
+                            >
+                                <div className="text-2xl mb-2">🥛</div>
+                                <div className="text-[#3E2723] font-bold text-lg">Ayran</div>
+                                <div className="text-[#8B2F2F] font-bold text-xl mt-1">
+                                    {oyunVerisi.mesrubatlar?.["ayran"] || 0}
+                                </div>
+                                <div className="mt-2">
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="Fiyat"
+                                        value={oyunVerisi.mesrubatFiyatlari?.["ayran"] || ""}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
+                                                mesrubatFiyatGuncelle("ayran", parseFloat(value) || 0);
+                                            }
+                                        }}
+                                        onKeyPress={(e) => {
+                                            if (!/[0-9.]/.test(e.key)) {
+                                                e.preventDefault();
+                                            }
+                                        }}
+                                        className="w-full p-1 text-center text-sm border border-[#D4AF37] rounded bg-[#F5E9DA] text-[#3E2723] placeholder-[#A0A0A0]"
+                                        title="Ayran fiyatı (örn: 7.50)"
+                                    />
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => mesrubatCikar("ayran")}
+                                disabled={!oyunVerisi.mesrubatlar?.["ayran"]}
+                                className="absolute top-2 right-2 w-6 h-6 bg-[#8B2F2F] text-white rounded-full hover:bg-[#5C1A1B] transition-all duration-200 font-bold text-sm disabled:bg-[#A0A0A0] disabled:cursor-not-allowed shadow-lg"
+                                title="Ayran çıkar"
+                            >
+                                🗑️
+                            </button>
+                        </div>
+
+                        {/* Kola */}
+                        <div className="relative">
+                            <button
+                                onClick={() => mesrubatEkle("kola")}
+                                className="w-full bg-[#F3E9DD] hover:bg-[#EAD7C1] rounded-lg p-4 border-2 border-[#D4AF37] transition-all duration-200 transform hover:scale-105 text-center group"
+                                title="Kola ekle"
+                            >
+                                <div className="text-2xl mb-2">🥤</div>
+                                <div className="text-[#3E2723] font-bold text-lg">Kola</div>
+                                <div className="text-[#8B2F2F] font-bold text-xl mt-1">
+                                    {oyunVerisi.mesrubatlar?.["kola"] || 0}
+                                </div>
+                                <div className="mt-2">
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="Fiyat"
+                                        value={oyunVerisi.mesrubatFiyatlari?.["kola"] || ""}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
+                                                mesrubatFiyatGuncelle("kola", parseFloat(value) || 0);
+                                            }
+                                        }}
+                                        onKeyPress={(e) => {
+                                            if (!/[0-9.]/.test(e.key)) {
+                                                e.preventDefault();
+                                            }
+                                        }}
+                                        className="w-full p-1 text-center text-sm border border-[#D4AF37] rounded bg-[#F5E9DA] text-[#3E2723] placeholder-[#A0A0A0]"
+                                        title="Kola fiyatı (örn: 7.50)"
+                                    />
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => mesrubatCikar("kola")}
+                                disabled={!oyunVerisi.mesrubatlar?.["kola"]}
+                                className="absolute top-2 right-2 w-6 h-6 bg-[#8B2F2F] text-white rounded-full hover:bg-[#5C1A1B] transition-all duration-200 font-bold text-sm disabled:bg-[#A0A0A0] disabled:cursor-not-allowed shadow-lg"
+                                title="Kola çıkar"
+                            >
+                                🗑️
+                            </button>
+                        </div>
+
+                        {/* Soda */}
+                        <div className="relative">
+                            <button
+                                onClick={() => mesrubatEkle("soda")}
+                                className="w-full bg-[#F3E9DD] hover:bg-[#EAD7C1] rounded-lg p-4 border-2 border-[#D4AF37] transition-all duration-200 transform hover:scale-105 text-center group"
+                                title="Soda ekle"
+                            >
+                                <div className="text-2xl mb-2">🥤</div>
+                                <div className="text-[#3E2723] font-bold text-lg">Soda</div>
+                                <div className="text-[#8B2F2F] font-bold text-xl mt-1">
+                                    {oyunVerisi.mesrubatlar?.["soda"] || 0}
+                                </div>
+                                <div className="mt-2">
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="Fiyat"
+                                        value={oyunVerisi.mesrubatFiyatlari?.["soda"] || ""}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
+                                                mesrubatFiyatGuncelle("soda", parseFloat(value) || 0);
+                                            }
+                                        }}
+                                        onKeyPress={(e) => {
+                                            if (!/[0-9.]/.test(e.key)) {
+                                                e.preventDefault();
+                                            }
+                                        }}
+                                        className="w-full p-1 text-center text-sm border border-[#D4AF37] rounded bg-[#F5E9DA] text-[#3E2723] placeholder-[#A0A0A0]"
+                                        title="Soda fiyatı (örn: 7.50)"
+                                    />
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => mesrubatCikar("soda")}
+                                disabled={!oyunVerisi.mesrubatlar?.["soda"]}
+                                className="absolute top-2 right-2 w-6 h-6 bg-[#8B2F2F] text-white rounded-full hover:bg-[#5C1A1B] transition-all duration-200 font-bold text-sm disabled:bg-[#A0A0A0] disabled:cursor-not-allowed shadow-lg"
+                                title="Soda çıkar"
+                            >
+                                🗑️
+                            </button>
+                        </div>
+
+                        {/* Meyveli Soda */}
+                        <div className="relative">
+                            <button
+                                onClick={() => mesrubatEkle("meyveli-soda")}
+                                className="w-full bg-[#F3E9DD] hover:bg-[#EAD7C1] rounded-lg p-4 border-2 border-[#D4AF37] transition-all duration-200 transform hover:scale-105 text-center group"
+                                title="Meyveli Soda ekle"
+                            >
+                                <div className="text-2xl mb-2">🥤</div>
+                                <div className="text-[#3E2723] font-bold text-lg">Meyveli Soda</div>
+                                <div className="text-[#8B2F2F] font-bold text-xl mt-1">
+                                    {oyunVerisi.mesrubatlar?.["meyveli-soda"] || 0}
+                                </div>
+                                <div className="mt-2">
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="Fiyat"
+                                        value={oyunVerisi.mesrubatFiyatlari?.["meyveli-soda"] || ""}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
+                                                mesrubatFiyatGuncelle("meyveli-soda", parseFloat(value) || 0);
+                                            }
+                                        }}
+                                        onKeyPress={(e) => {
+                                            if (!/[0-9.]/.test(e.key)) {
+                                                e.preventDefault();
+                                            }
+                                        }}
+                                        className="w-full p-1 text-center text-sm border border-[#D4AF37] rounded bg-[#F5E9DA] text-[#3E2723] placeholder-[#A0A0A0]"
+                                        title="Meyveli Soda fiyatı (örn: 7.50)"
+                                    />
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => mesrubatCikar("meyveli-soda")}
+                                disabled={!oyunVerisi.mesrubatlar?.["meyveli-soda"]}
+                                className="absolute top-2 right-2 w-6 h-6 bg-[#8B2F2F] text-white rounded-full hover:bg-[#5C1A1B] transition-all duration-200 font-bold text-sm disabled:bg-[#A0A0A0] disabled:cursor-not-allowed shadow-lg"
+                                title="Meyveli Soda çıkar"
+                            >
+                                🗑️
+                            </button>
+                        </div>
+
+                        {/* Nescafe */}
+                        <div className="relative">
+                            <button
+                                onClick={() => mesrubatEkle("nescafe")}
+                                className="w-full bg-[#F3E9DD] hover:bg-[#EAD7C1] rounded-lg p-4 border-2 border-[#D4AF37] transition-all duration-200 transform hover:scale-105 text-center group"
+                                title="Nescafe ekle"
+                            >
+                                <div className="text-2xl mb-2">☕</div>
+                                <div className="text-[#3E2723] font-bold text-lg">Nescafe</div>
+                                <div className="text-[#8B2F2F] font-bold text-xl mt-1">
+                                    {oyunVerisi.mesrubatlar?.["nescafe"] || 0}
+                                </div>
+                                <div className="mt-2">
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="Fiyat"
+                                        value={oyunVerisi.mesrubatFiyatlari?.["nescafe"] || ""}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
+                                                mesrubatFiyatGuncelle("nescafe", parseFloat(value) || 0);
+                                            }
+                                        }}
+                                        onKeyPress={(e) => {
+                                            if (!/[0-9.]/.test(e.key)) {
+                                                e.preventDefault();
+                                            }
+                                        }}
+                                        className="w-full p-1 text-center text-sm border border-[#D4AF37] rounded bg-[#F5E9DA] text-[#3E2723] placeholder-[#A0A0A0]"
+                                        title="Nescafe fiyatı (örn: 7.50)"
+                                    />
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => mesrubatCikar("nescafe")}
+                                disabled={!oyunVerisi.mesrubatlar?.["nescafe"]}
+                                className="absolute top-2 right-2 w-6 h-6 bg-[#8B2F2F] text-white rounded-full hover:bg-[#5C1A1B] transition-all duration-200 font-bold text-sm disabled:bg-[#A0A0A0] disabled:cursor-not-allowed shadow-lg"
+                                title="Nescafe çıkar"
+                            >
+                                🗑️
+                            </button>
+                        </div>
+
+                        {/* Su */}
+                        <div className="relative">
+                            <button
+                                onClick={() => mesrubatEkle("su")}
+                                className="w-full bg-[#F3E9DD] hover:bg-[#EAD7C1] rounded-lg p-4 border-2 border-[#D4AF37] transition-all duration-200 transform hover:scale-105 text-center group"
+                                title="Su ekle"
+                            >
+                                <div className="text-2xl mb-2">💧</div>
+                                <div className="text-[#3E2723] font-bold text-lg">Su</div>
+                                <div className="text-[#8B2F2F] font-bold text-xl mt-1">
+                                    {oyunVerisi.mesrubatlar?.["su"] || 0}
+                                </div>
+                                <div className="mt-2">
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="Fiyat"
+                                        value={oyunVerisi.mesrubatFiyatlari?.["su"] || ""}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
+                                                mesrubatFiyatGuncelle("su", parseFloat(value) || 0);
+                                            }
+                                        }}
+                                        onKeyPress={(e) => {
+                                            if (!/[0-9.]/.test(e.key)) {
+                                                e.preventDefault();
+                                            }
+                                        }}
+                                        className="w-full p-1 text-center text-sm border border-[#D4AF37] rounded bg-[#F5E9DA] text-[#3E2723] placeholder-[#A0A0A0]"
+                                        title="Su fiyatı (örn: 7.50)"
+                                    />
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => mesrubatCikar("su")}
+                                disabled={!oyunVerisi.mesrubatlar?.["su"]}
+                                className="absolute top-2 right-2 w-6 h-6 bg-[#8B2F2F] text-white rounded-full hover:bg-[#5C1A1B] transition-all duration-200 font-bold text-sm disabled:bg-[#A0A0A0] disabled:cursor-not-allowed shadow-lg"
+                                title="Su çıkar"
+                            >
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Kontrol Butonları */}
+                    <div className="flex gap-3 justify-center">
+                        <button
+                            onClick={() => {
+                                // Tüm meşrubatları ve fiyatları sıfırla
+                                const guncelVeri: OyunVerisi = {
+                                    ...oyunVerisi,
+                                    mesrubatlar: {},
+                                    mesrubatFiyatlari: {},
+                                };
+                                saveToStorage(storageKey, guncelVeri);
+                                setOyunVerisi(guncelVeri);
+                            }}
+                            className="bg-[#3B5D3A] hover:bg-[#25401F] text-white px-6 py-3 rounded-lg font-bold transition-all duration-200 transform hover:scale-105"
+                        >
+                            🔄 Sıfırla
+                        </button>
+                    </div>
+
+                    {/* Toplam */}
+                    <div className="flex items-center justify-between bg-[#D4AF37] rounded-lg p-3 mt-4 border border-[#8B2F2F]">
+                        <span className="text-[#3E2723] font-bold text-lg">💰 Toplam Fiyat</span>
+                        <span className="text-[#3E2723] font-bold text-xl">
+                            {Object.entries(oyunVerisi.mesrubatlar || {}).reduce((toplam, [mesrubatTuru, miktar]) => {
+                                const fiyat = oyunVerisi.mesrubatFiyatlari?.[mesrubatTuru] || 0;
+                                return toplam + (miktar * fiyat);
+                            }, 0).toFixed(2)} ₺
+                        </span>
+                    </div>
+                </div>
+            </div>
+
             {/* Kontrol Butonları */}
             <div className="max-w-md mx-auto mt-6">
                 <div className="bg-[#7B4B28] rounded-lg p-4 shadow-2xl border border-[#D4AF37]">
@@ -752,7 +1268,7 @@ export default function Cezali101Skor() {
                             onClick={sifirla}
                             className="w-full bg-[#3B5D3A] text-white py-2 rounded-lg shadow-lg hover:bg-[#25401F] transition-all duration-300 transform hover:scale-105 border border-[#3B5D3A] font-bold"
                         >
-                            🔄 Skorları Sıfırla
+                            🔄 Oyunu Sıfırla
                         </button>
                         <button
                             onClick={geri}
@@ -771,6 +1287,7 @@ export default function Cezali101Skor() {
                 <p className="mt-2 text-xs">💡 İpucu: Skorları düzenlemek için tablodaki değerlere, isimleri düzenlemek için oyuncu isimlerine tıklayın!</p>
                 <p className="mt-1 text-xs">🎮 Hızlı Skor: 2×, 4×, +200, -100 butonlarını kullanın!</p>
                 <p className="mt-1 text-xs">⚠️ Hızlı Ceza: 100 puan butonu, +10/-10 ile ayarlama yapabilirsiniz!</p>
+                <p className="mt-1 text-xs">☕ Meşrubat Takibi: Büyük butonlara tıklayarak ekleyin, sağ üstteki - butonlarıyla çıkarın, fiyatları girebilirsiniz!</p>
             </div>
         </div>
     );

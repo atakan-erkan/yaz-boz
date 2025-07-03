@@ -7,6 +7,8 @@ type OyunVerisi = {
     oyun: string;
     oyuncular: string[];
     skorlar: number[][];
+    mesrubatlar?: { [mesrubatTuru: string]: number }; // Genel meşrubat takibi
+    mesrubatFiyatlari?: { [mesrubatTuru: string]: number }; // Meşrubat fiyatları
 };
 
 export default function SkorEkrani() {
@@ -26,6 +28,14 @@ export default function SkorEkrani() {
     useEffect(() => {
         const veri = getFromStorage<OyunVerisi>(storageKey);
         if (veri) {
+            // Eğer meşrubatlar yoksa, yeni formata çevir
+            if (!veri.mesrubatlar) {
+                veri.mesrubatlar = {};
+            }
+            // Eğer meşrubat fiyatları yoksa, yeni formata çevir
+            if (!veri.mesrubatFiyatlari) {
+                veri.mesrubatFiyatlari = {};
+            }
             setOyunVerisi(veri);
             setYeniSkorlar(Array(veri.oyuncular.length).fill(""));
         } else {
@@ -123,11 +133,71 @@ export default function SkorEkrani() {
         setDuzenlemeDegeri(oyunVerisi?.oyuncular[oyuncuIndex] || "");
     };
 
+    // Meşrubat ekleme fonksiyonu
+    const mesrubatEkle = (mesrubatTuru: string, miktar: number = 1) => {
+        if (!oyunVerisi) return;
+
+        const guncellenmisMesrubatlar = { ...oyunVerisi.mesrubatlar };
+
+        if (!guncellenmisMesrubatlar[mesrubatTuru]) {
+            guncellenmisMesrubatlar[mesrubatTuru] = 0;
+        }
+
+        guncellenmisMesrubatlar[mesrubatTuru] += miktar;
+
+        const guncelVeri: OyunVerisi = {
+            ...oyunVerisi,
+            mesrubatlar: guncellenmisMesrubatlar,
+        };
+
+        saveToStorage(storageKey, guncelVeri);
+        setOyunVerisi(guncelVeri);
+    };
+
+    // Meşrubat çıkarma fonksiyonu
+    const mesrubatCikar = (mesrubatTuru: string, miktar: number = 1) => {
+        if (!oyunVerisi) return;
+
+        const guncellenmisMesrubatlar = { ...oyunVerisi.mesrubatlar };
+
+        if (!guncellenmisMesrubatlar[mesrubatTuru]) {
+            return;
+        }
+
+        guncellenmisMesrubatlar[mesrubatTuru] = Math.max(0, guncellenmisMesrubatlar[mesrubatTuru] - miktar);
+
+        const guncelVeri: OyunVerisi = {
+            ...oyunVerisi,
+            mesrubatlar: guncellenmisMesrubatlar,
+        };
+
+        saveToStorage(storageKey, guncelVeri);
+        setOyunVerisi(guncelVeri);
+    };
+
+    // Meşrubat fiyat güncelleme fonksiyonu
+    const mesrubatFiyatGuncelle = (mesrubatTuru: string, fiyat: number) => {
+        if (!oyunVerisi) return;
+
+        const guncellenmisFiyatlar = { ...oyunVerisi.mesrubatFiyatlari };
+        guncellenmisFiyatlar[mesrubatTuru] = fiyat;
+
+        const guncelVeri: OyunVerisi = {
+            ...oyunVerisi,
+            mesrubatFiyatlari: guncellenmisFiyatlar,
+        };
+
+        saveToStorage(storageKey, guncelVeri);
+        setOyunVerisi(guncelVeri);
+    };
+
     const skorlariSifirla = () => {
         if (!oyunVerisi) return;
         const sifirlanmis = {
             ...oyunVerisi,
             skorlar: Array(oyunVerisi.oyuncular.length).fill([]),
+            mesrubatlar: {},
+            mesrubatFiyatlari: {},
         };
         saveToStorage(storageKey, sifirlanmis);
         setOyunVerisi(sifirlanmis);
@@ -345,11 +415,406 @@ export default function SkorEkrani() {
                 </div>
             </div>
 
+            {/* Meşrubat Takip Bölümü */}
+            <div className="max-w-4xl mx-auto mt-6">
+                <div className="bg-[#7B4B28] rounded-lg p-4 shadow-2xl border border-[#D4AF37]">
+                    <h2 className="text-xl font-serif font-bold text-[#D4AF37] text-center mb-4">
+                        ☕ Masada İçilen Meşrubatlar
+                    </h2>
+
+                    {/* Meşrubat Butonları */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
+                        {/* Çay */}
+                        <div className="relative">
+                            <button
+                                onClick={() => mesrubatEkle("çay")}
+                                className="w-full bg-[#F3E9DD] hover:bg-[#EAD7C1] rounded-lg p-4 border-2 border-[#D4AF37] transition-all duration-200 transform hover:scale-105 text-center group"
+                                title="Çay ekle"
+                            >
+                                <div className="text-2xl mb-2">☕</div>
+                                <div className="text-[#3E2723] font-bold text-lg">Çay</div>
+                                <div className="text-[#8B2F2F] font-bold text-xl mt-1">
+                                    {oyunVerisi.mesrubatlar?.["çay"] || 0}
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => mesrubatCikar("çay")}
+                                disabled={!oyunVerisi.mesrubatlar?.["çay"]}
+                                className="absolute top-2 right-2 w-6 h-6 bg-[#8B2F2F] text-white rounded-full hover:bg-[#5C1A1B] transition-all duration-200 font-bold text-sm disabled:bg-[#A0A0A0] disabled:cursor-not-allowed shadow-lg"
+                                title="Çay çıkar"
+                            >
+                                🗑️
+                            </button>
+                            <div className="mt-2">
+                                <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    placeholder="Fiyat"
+                                    value={oyunVerisi.mesrubatFiyatlari?.["çay"] || ""}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        if (value === '' || /^\d+$/.test(value)) {
+                                            mesrubatFiyatGuncelle("çay", parseInt(value) || 0);
+                                        }
+                                    }}
+                                    onKeyPress={(e) => {
+                                        if (!/[0-9]/.test(e.key)) {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                    className="w-full p-2 border border-[#D4AF37] rounded-lg bg-[#F3E9DD] text-[#3E2723] text-center text-sm placeholder-[#A0A0A0] focus:border-[#D4AF37] focus:outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Kahve */}
+                        <div className="relative">
+                            <button
+                                onClick={() => mesrubatEkle("kahve")}
+                                className="w-full bg-[#F3E9DD] hover:bg-[#EAD7C1] rounded-lg p-4 border-2 border-[#D4AF37] transition-all duration-200 transform hover:scale-105 text-center group"
+                                title="Kahve ekle"
+                            >
+                                <div className="text-2xl mb-2">☕</div>
+                                <div className="text-[#3E2723] font-bold text-lg">Kahve</div>
+                                <div className="text-[#8B2F2F] font-bold text-xl mt-1">
+                                    {oyunVerisi.mesrubatlar?.["kahve"] || 0}
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => mesrubatCikar("kahve")}
+                                disabled={!oyunVerisi.mesrubatlar?.["kahve"]}
+                                className="absolute top-2 right-2 w-6 h-6 bg-[#8B2F2F] text-white rounded-full hover:bg-[#5C1A1B] transition-all duration-200 font-bold text-sm disabled:bg-[#A0A0A0] disabled:cursor-not-allowed shadow-lg"
+                                title="Kahve çıkar"
+                            >
+                                🗑️
+                            </button>
+                            <div className="mt-2">
+                                <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    placeholder="Fiyat"
+                                    value={oyunVerisi.mesrubatFiyatlari?.["kahve"] || ""}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        if (value === '' || /^\d+$/.test(value)) {
+                                            mesrubatFiyatGuncelle("kahve", parseInt(value) || 0);
+                                        }
+                                    }}
+                                    onKeyPress={(e) => {
+                                        if (!/[0-9]/.test(e.key)) {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                    className="w-full p-2 border border-[#D4AF37] rounded-lg bg-[#F3E9DD] text-[#3E2723] text-center text-sm placeholder-[#A0A0A0] focus:border-[#D4AF37] focus:outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Ayran */}
+                        <div className="relative">
+                            <button
+                                onClick={() => mesrubatEkle("ayran")}
+                                className="w-full bg-[#F3E9DD] hover:bg-[#EAD7C1] rounded-lg p-4 border-2 border-[#D4AF37] transition-all duration-200 transform hover:scale-105 text-center group"
+                                title="Ayran ekle"
+                            >
+                                <div className="text-2xl mb-2">🥛</div>
+                                <div className="text-[#3E2723] font-bold text-lg">Ayran</div>
+                                <div className="text-[#8B2F2F] font-bold text-xl mt-1">
+                                    {oyunVerisi.mesrubatlar?.["ayran"] || 0}
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => mesrubatCikar("ayran")}
+                                disabled={!oyunVerisi.mesrubatlar?.["ayran"]}
+                                className="absolute top-2 right-2 w-6 h-6 bg-[#8B2F2F] text-white rounded-full hover:bg-[#5C1A1B] transition-all duration-200 font-bold text-sm disabled:bg-[#A0A0A0] disabled:cursor-not-allowed shadow-lg"
+                                title="Ayran çıkar"
+                            >
+                                🗑️
+                            </button>
+                            <div className="mt-2">
+                                <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    placeholder="Fiyat"
+                                    value={oyunVerisi.mesrubatFiyatlari?.["ayran"] || ""}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        if (value === '' || /^\d+$/.test(value)) {
+                                            mesrubatFiyatGuncelle("ayran", parseInt(value) || 0);
+                                        }
+                                    }}
+                                    onKeyPress={(e) => {
+                                        if (!/[0-9]/.test(e.key)) {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                    className="w-full p-2 border border-[#D4AF37] rounded-lg bg-[#F3E9DD] text-[#3E2723] text-center text-sm placeholder-[#A0A0A0] focus:border-[#D4AF37] focus:outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Kola */}
+                        <div className="relative">
+                            <button
+                                onClick={() => mesrubatEkle("kola")}
+                                className="w-full bg-[#F3E9DD] hover:bg-[#EAD7C1] rounded-lg p-4 border-2 border-[#D4AF37] transition-all duration-200 transform hover:scale-105 text-center group"
+                                title="Kola ekle"
+                            >
+                                <div className="text-2xl mb-2">🥤</div>
+                                <div className="text-[#3E2723] font-bold text-lg">Kola</div>
+                                <div className="text-[#8B2F2F] font-bold text-xl mt-1">
+                                    {oyunVerisi.mesrubatlar?.["kola"] || 0}
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => mesrubatCikar("kola")}
+                                disabled={!oyunVerisi.mesrubatlar?.["kola"]}
+                                className="absolute top-2 right-2 w-6 h-6 bg-[#8B2F2F] text-white rounded-full hover:bg-[#5C1A1B] transition-all duration-200 font-bold text-sm disabled:bg-[#A0A0A0] disabled:cursor-not-allowed shadow-lg"
+                                title="Kola çıkar"
+                            >
+                                🗑️
+                            </button>
+                            <div className="mt-2">
+                                <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    placeholder="Fiyat"
+                                    value={oyunVerisi.mesrubatFiyatlari?.["kola"] || ""}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        if (value === '' || /^\d+$/.test(value)) {
+                                            mesrubatFiyatGuncelle("kola", parseInt(value) || 0);
+                                        }
+                                    }}
+                                    onKeyPress={(e) => {
+                                        if (!/[0-9]/.test(e.key)) {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                    className="w-full p-2 border border-[#D4AF37] rounded-lg bg-[#F3E9DD] text-[#3E2723] text-center text-sm placeholder-[#A0A0A0] focus:border-[#D4AF37] focus:outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Soda */}
+                        <div className="relative">
+                            <button
+                                onClick={() => mesrubatEkle("soda")}
+                                className="w-full bg-[#F3E9DD] hover:bg-[#EAD7C1] rounded-lg p-4 border-2 border-[#D4AF37] transition-all duration-200 transform hover:scale-105 text-center group"
+                                title="Soda ekle"
+                            >
+                                <div className="text-2xl mb-2">🥤</div>
+                                <div className="text-[#3E2723] font-bold text-lg">Soda</div>
+                                <div className="text-[#8B2F2F] font-bold text-xl mt-1">
+                                    {oyunVerisi.mesrubatlar?.["soda"] || 0}
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => mesrubatCikar("soda")}
+                                disabled={!oyunVerisi.mesrubatlar?.["soda"]}
+                                className="absolute top-2 right-2 w-6 h-6 bg-[#8B2F2F] text-white rounded-full hover:bg-[#5C1A1B] transition-all duration-200 font-bold text-sm disabled:bg-[#A0A0A0] disabled:cursor-not-allowed shadow-lg"
+                                title="Soda çıkar"
+                            >
+                                🗑️
+                            </button>
+                            <div className="mt-2">
+                                <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    placeholder="Fiyat"
+                                    value={oyunVerisi.mesrubatFiyatlari?.["soda"] || ""}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        if (value === '' || /^\d+$/.test(value)) {
+                                            mesrubatFiyatGuncelle("soda", parseInt(value) || 0);
+                                        }
+                                    }}
+                                    onKeyPress={(e) => {
+                                        if (!/[0-9]/.test(e.key)) {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                    className="w-full p-2 border border-[#D4AF37] rounded-lg bg-[#F3E9DD] text-[#3E2723] text-center text-sm placeholder-[#A0A0A0] focus:border-[#D4AF37] focus:outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Meyveli Soda */}
+                        <div className="relative">
+                            <button
+                                onClick={() => mesrubatEkle("meyveli-soda")}
+                                className="w-full bg-[#F3E9DD] hover:bg-[#EAD7C1] rounded-lg p-4 border-2 border-[#D4AF37] transition-all duration-200 transform hover:scale-105 text-center group"
+                                title="Meyveli Soda ekle"
+                            >
+                                <div className="text-2xl mb-2">🥤</div>
+                                <div className="text-[#3E2723] font-bold text-lg">Meyveli Soda</div>
+                                <div className="text-[#8B2F2F] font-bold text-xl mt-1">
+                                    {oyunVerisi.mesrubatlar?.["meyveli-soda"] || 0}
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => mesrubatCikar("meyveli-soda")}
+                                disabled={!oyunVerisi.mesrubatlar?.["meyveli-soda"]}
+                                className="absolute top-2 right-2 w-6 h-6 bg-[#8B2F2F] text-white rounded-full hover:bg-[#5C1A1B] transition-all duration-200 font-bold text-sm disabled:bg-[#A0A0A0] disabled:cursor-not-allowed shadow-lg"
+                                title="Meyveli Soda çıkar"
+                            >
+                                🗑️
+                            </button>
+                            <div className="mt-2">
+                                <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    placeholder="Fiyat"
+                                    value={oyunVerisi.mesrubatFiyatlari?.["meyveli-soda"] || ""}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        if (value === '' || /^\d+$/.test(value)) {
+                                            mesrubatFiyatGuncelle("meyveli-soda", parseInt(value) || 0);
+                                        }
+                                    }}
+                                    onKeyPress={(e) => {
+                                        if (!/[0-9]/.test(e.key)) {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                    className="w-full p-2 border border-[#D4AF37] rounded-lg bg-[#F3E9DD] text-[#3E2723] text-center text-sm placeholder-[#A0A0A0] focus:border-[#D4AF37] focus:outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Nescafe */}
+                        <div className="relative">
+                            <button
+                                onClick={() => mesrubatEkle("nescafe")}
+                                className="w-full bg-[#F3E9DD] hover:bg-[#EAD7C1] rounded-lg p-4 border-2 border-[#D4AF37] transition-all duration-200 transform hover:scale-105 text-center group"
+                                title="Nescafe ekle"
+                            >
+                                <div className="text-2xl mb-2">☕</div>
+                                <div className="text-[#3E2723] font-bold text-lg">Nescafe</div>
+                                <div className="text-[#8B2F2F] font-bold text-xl mt-1">
+                                    {oyunVerisi.mesrubatlar?.["nescafe"] || 0}
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => mesrubatCikar("nescafe")}
+                                disabled={!oyunVerisi.mesrubatlar?.["nescafe"]}
+                                className="absolute top-2 right-2 w-6 h-6 bg-[#8B2F2F] text-white rounded-full hover:bg-[#5C1A1B] transition-all duration-200 font-bold text-sm disabled:bg-[#A0A0A0] disabled:cursor-not-allowed shadow-lg"
+                                title="Nescafe çıkar"
+                            >
+                                🗑️
+                            </button>
+                            <div className="mt-2">
+                                <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    placeholder="Fiyat"
+                                    value={oyunVerisi.mesrubatFiyatlari?.["nescafe"] || ""}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        if (value === '' || /^\d+$/.test(value)) {
+                                            mesrubatFiyatGuncelle("nescafe", parseInt(value) || 0);
+                                        }
+                                    }}
+                                    onKeyPress={(e) => {
+                                        if (!/[0-9]/.test(e.key)) {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                    className="w-full p-2 border border-[#D4AF37] rounded-lg bg-[#F3E9DD] text-[#3E2723] text-center text-sm placeholder-[#A0A0A0] focus:border-[#D4AF37] focus:outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Su */}
+                        <div className="relative">
+                            <button
+                                onClick={() => mesrubatEkle("su")}
+                                className="w-full bg-[#F3E9DD] hover:bg-[#EAD7C1] rounded-lg p-4 border-2 border-[#D4AF37] transition-all duration-200 transform hover:scale-105 text-center group"
+                                title="Su ekle"
+                            >
+                                <div className="text-2xl mb-2">💧</div>
+                                <div className="text-[#3E2723] font-bold text-lg">Su</div>
+                                <div className="text-[#8B2F2F] font-bold text-xl mt-1">
+                                    {oyunVerisi.mesrubatlar?.["su"] || 0}
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => mesrubatCikar("su")}
+                                disabled={!oyunVerisi.mesrubatlar?.["su"]}
+                                className="absolute top-2 right-2 w-6 h-6 bg-[#8B2F2F] text-white rounded-full hover:bg-[#5C1A1B] transition-all duration-200 font-bold text-sm disabled:bg-[#A0A0A0] disabled:cursor-not-allowed shadow-lg"
+                                title="Su çıkar"
+                            >
+                                🗑️
+                            </button>
+                            <div className="mt-2">
+                                <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    placeholder="Fiyat"
+                                    value={oyunVerisi.mesrubatFiyatlari?.["su"] || ""}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        if (value === '' || /^\d+$/.test(value)) {
+                                            mesrubatFiyatGuncelle("su", parseInt(value) || 0);
+                                        }
+                                    }}
+                                    onKeyPress={(e) => {
+                                        if (!/[0-9]/.test(e.key)) {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                    className="w-full p-2 border border-[#D4AF37] rounded-lg bg-[#F3E9DD] text-[#3E2723] text-center text-sm placeholder-[#A0A0A0] focus:border-[#D4AF37] focus:outline-none"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Kontrol Butonları */}
+                    <div className="flex gap-3 justify-center">
+                        <button
+                            onClick={() => {
+                                // Tüm meşrubatları sıfırla
+                                const guncelVeri: OyunVerisi = {
+                                    ...oyunVerisi,
+                                    mesrubatlar: {},
+                                    mesrubatFiyatlari: {},
+                                };
+                                saveToStorage(storageKey, guncelVeri);
+                                setOyunVerisi(guncelVeri);
+                            }}
+                            className="bg-[#3B5D3A] hover:bg-[#25401F] text-white px-6 py-3 rounded-lg font-bold transition-all duration-200 transform hover:scale-105"
+                        >
+                            🔄 Sıfırla
+                        </button>
+                    </div>
+
+                    {/* Toplam Fiyat */}
+                    <div className="flex items-center justify-between bg-[#D4AF37] rounded-lg p-3 mt-4 border border-[#8B2F2F]">
+                        <span className="text-[#3E2723] font-bold text-lg">💰 Toplam Fiyat</span>
+                        <span className="text-[#3E2723] font-bold text-xl">
+                            {Object.entries(oyunVerisi.mesrubatlar || {}).reduce((toplam, [mesrubatTuru, miktar]) => {
+                                const fiyat = oyunVerisi.mesrubatFiyatlari?.[mesrubatTuru] || 0;
+                                return toplam + (miktar * fiyat);
+                            }, 0)} ₺
+                        </span>
+                    </div>
+                </div>
+            </div>
+
             {/* Kıraathane detayları */}
             <div className="text-center text-[#3E2723] text-sm opacity-75 mt-8">
                 <p>☕ Çay servisi mevcuttur</p>
                 <p>🎯 Dostluk ve eğlence garantili</p>
                 <p className="mt-2 text-xs">💡 İpucu: Skorları düzenlemek için tablodaki değerlere, isimleri düzenlemek için oyuncu isimlerine tıklayın!</p>
+                <p className="mt-1 text-xs">☕ Meşrubat Takibi: Büyük butonlara tıklayarak ekleyin, sağ üstteki - butonlarıyla çıkarın!</p>
             </div>
         </div>
     );

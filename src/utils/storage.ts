@@ -20,13 +20,15 @@ export type KayitliOyun = {
     oyuncular: string[];
     skorlar: number[][];
     cezalar?: number[][];
+    mesrubatlar?: { [mesrubatTuru: string]: number }; // Meşrubat takibi
+    mesrubatFiyatlari?: { [mesrubatTuru: string]: number }; // Meşrubat fiyatları
     hedefSkor?: number; // Pişti için hedef skor
     kayitTarihi: string;
     kayitSaati: string;
 };
 
 // Kayıtlı oyunları kaydet
-export const kayitliOyunKaydet = (oyunVerisi: { oyuncular: string[]; skorlar: number[][]; cezalar?: number[][] }, oyunAdi: string) => {
+export const kayitliOyunKaydet = (oyunVerisi: { oyuncular: string[]; skorlar: number[][]; cezalar?: number[][]; mesrubatlar?: { [mesrubatTuru: string]: number }; mesrubatFiyatlari?: { [mesrubatTuru: string]: number } }, oyunAdi: string) => {
     if (typeof window !== "undefined") {
         const kayitliOyunlar = getKayitliOyunlar();
 
@@ -36,6 +38,8 @@ export const kayitliOyunKaydet = (oyunVerisi: { oyuncular: string[]; skorlar: nu
             oyuncular: oyunVerisi.oyuncular,
             skorlar: oyunVerisi.skorlar,
             cezalar: oyunVerisi.cezalar || [],
+            mesrubatlar: oyunVerisi.mesrubatlar || {},
+            mesrubatFiyatlari: oyunVerisi.mesrubatFiyatlari || {},
             kayitTarihi: new Date().toLocaleDateString('tr-TR'),
             kayitSaati: new Date().toLocaleTimeString('tr-TR', {
                 hour: '2-digit',
@@ -210,7 +214,9 @@ export const kayitliOyunuYukle = (id: string) => {
                 oyun: oyun.oyunAdi,
                 oyuncular: oyun.oyuncular,
                 skorlar: oyun.skorlar,
-                cezalar: oyun.cezalar || []
+                cezalar: oyun.cezalar || [],
+                mesrubatlar: oyun.mesrubatlar || {},
+                mesrubatFiyatlari: oyun.mesrubatFiyatlari || {}
             };
 
             saveToStorage(storageKey, oyunVerisi);
