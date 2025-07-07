@@ -303,9 +303,8 @@ export default function Cezali101Skor() {
             ...oyunVerisi,
             skorlar: Array(oyunVerisi.oyuncular.length).fill([]).map(() => []),
             cezalar: Array(oyunVerisi.oyuncular.length).fill([]).map(() => []),
-            mesrubatlar: {},
             elSayisi: 9, // El sayısını da sıfırla
-            // Meşrubat fiyatları korunuyor
+            // Meşrubatlar ve meşrubat fiyatları korunuyor
         };
         saveToStorage(storageKey, temiz);
         setOyunVerisi(temiz);
