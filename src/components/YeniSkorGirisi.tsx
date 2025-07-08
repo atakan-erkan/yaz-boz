@@ -111,6 +111,7 @@ export default function YeniSkorGirisi({
                                     value={yeniSkorlar[i]}
                                     onChange={(e) => handleSkorChange(i, e.target.value)}
                                     onKeyPress={handleKeyPress}
+                                    enterKeyHint={i === oyunVerisi.oyuncular.length - 1 ? "done" : "next"}
                                     className="flex-1 p-3 border-2 border-[#D4AF37] rounded-lg bg-[#F3E9DD] text-[#3E2723] placeholder-[#A0A0A0] focus:border-[#D4AF37] focus:outline-none font-medium disabled:bg-[#A0A0A0] disabled:cursor-not-allowed"
                                     disabled={disabled}
                                 />

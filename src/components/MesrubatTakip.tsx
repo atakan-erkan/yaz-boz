@@ -57,34 +57,24 @@ export default function MesrubatTakip({ oyunVerisi, storageKey, setOyunVerisi, a
                                 </div>
                                 <div className="mt-2">
                                     <input
-                                        type="number"
+                                        type={allowDecimal ? "number" : "number"}
                                         step={allowDecimal ? "0.01" : "1"}
                                         min="0"
+                                        inputMode={allowDecimal ? "decimal" : "numeric"}
                                         placeholder="Fiyat"
-                                        value={oyunVerisi.mesrubatFiyatlari?.[mesrubat.id] || ""}
+                                        defaultValue={oyunVerisi.mesrubatFiyatlari?.[mesrubat.id] || ""}
+                                        onClick={(e) => e.stopPropagation()}
                                         onChange={(e) => {
                                             const value = e.target.value;
                                             if (allowDecimal) {
-                                                if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
-                                                    handleFiyatGuncelle(mesrubat.id, parseFloat(value) || 0);
-                                                }
+                                                // HTML number input'un kendi ondalık desteğini kullan
+                                                handleFiyatGuncelle(mesrubat.id, parseFloat(value) || 0);
                                             } else {
-                                                if (value === '' || /^\d+$/.test(value)) {
-                                                    handleFiyatGuncelle(mesrubat.id, parseInt(value) || 0);
-                                                }
+                                                // Tam sayı girişi
+                                                handleFiyatGuncelle(mesrubat.id, parseInt(value) || 0);
                                             }
                                         }}
-                                        onKeyPress={(e) => {
-                                            if (allowDecimal) {
-                                                if (!/[0-9.]/.test(e.key)) {
-                                                    e.preventDefault();
-                                                }
-                                            } else {
-                                                if (!/[0-9]/.test(e.key)) {
-                                                    e.preventDefault();
-                                                }
-                                            }
-                                        }}
+
                                         className="w-full p-1 text-center text-sm border border-[#D4AF37] rounded bg-[#F5E9DA] text-[#3E2723] placeholder-[#A0A0A0]"
                                         title={`${mesrubat.ad} fiyatı ${allowDecimal ? '(örn: 7.50)' : ''}`}
                                     />
