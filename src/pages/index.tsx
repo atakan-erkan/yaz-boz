@@ -160,7 +160,7 @@ export default function Home() {
                           );
                         } else if (oyun.oyunAdi === "Normal Okey") {
                           const turSayisi = oyun.skorlar[0]?.length || 0;
-                          const yuzde = Math.min((turSayisi / 20) * 100, 100);
+                          const yuzde = Math.min((turSayisi / 15) * 100, 100);
                           return (
                             <div className="mt-2">
                               <div className="bg-[#EAD7C1] rounded-full h-2 mb-1">
@@ -170,7 +170,7 @@ export default function Home() {
                                 ></div>
                               </div>
                               <p className="text-[#8B2F2F] text-xs text-center">
-                                Tur: {turSayisi}/20 ({yuzde.toFixed(0)}%)
+                                Tur: {turSayisi}/15 ({yuzde.toFixed(0)}%)
                               </p>
                             </div>
                           );

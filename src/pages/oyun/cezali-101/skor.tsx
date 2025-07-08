@@ -198,6 +198,7 @@ export default function Cezali101Skor() {
                 onSkorEkle={handleSkorEkle}
                 showHizliButonlar={true}
                 disabled={oyunVerisi.skorlar[0]?.length >= (oyunVerisi.elSayisi || 9)}
+                oyunTuru="cezali-101"
             />
 
             {/* Meşrubat Takip */}

@@ -121,11 +121,11 @@ export const oyunMantiklari: OyunBitisMantigi[] = [
     },
     {
         oyunAdi: "Normal Okey",
-        turSayisi: 20, // Varsayılan tur sayısı
+        turSayisi: 15, // Okey genelde 15 tur oynanır
         kazananKontrol: (skorlar: number[][]) => {
             const turSayisi = skorlar[0]?.length || 0;
 
-            if (turSayisi >= 20) {
+            if (turSayisi >= 15) {
                 const toplamSkorlar = skorlar.map(skor => skor.reduce((a, b) => a + b, 0));
                 const enDusukSkor = Math.min(...toplamSkorlar);
                 const kaybedenIndex = toplamSkorlar.findIndex(skor => skor === enDusukSkor);
@@ -137,7 +137,7 @@ export const oyunMantiklari: OyunBitisMantigi[] = [
     },
     {
         oyunAdi: "Batak",
-        turSayisi: 13, // Varsayılan tur sayısı
+        turSayisi: 13, // Batak 13 el oynanır
         kazananKontrol: (skorlar: number[][]) => {
             const turSayisi = skorlar[0]?.length || 0;
 
@@ -166,6 +166,30 @@ export const kayitliOyunKazananKontrol = (oyun: KayitliOyun) => {
 
             if (kazananIndex !== -1) {
                 return { oyunBitti: true, kazanan: oyun.oyuncular[kazananIndex], kazananIndex };
+            }
+            return { oyunBitti: false };
+        }
+
+        // Cezalı 101 için özel kontrol
+        if (oyun.oyunAdi === "Cezalı 101") {
+            const turSayisi = oyun.skorlar[0]?.length || 0;
+            const hedefElSayisi = oyun.elSayisi || 9;
+
+            if (turSayisi >= hedefElSayisi) {
+                const toplamSkorlar = oyun.skorlar.map(skor => skor.reduce((a, b) => a + b, 0));
+                const toplamCezalar = oyun.cezalar ? oyun.cezalar.map(cezaListesi =>
+                    cezaListesi.reduce((toplam, ceza) => toplam + ceza, 0)
+                ) : Array(oyun.skorlar.length).fill(0);
+
+                const finalSkorlar = toplamSkorlar.map((skor, i) => skor + toplamCezalar[i]);
+                const enYuksekSkor = Math.max(...finalSkorlar);
+                const kaybedenIndex = finalSkorlar.findIndex(skor => skor === enYuksekSkor);
+
+                return {
+                    oyunBitti: true,
+                    kazanan: oyun.oyuncular[kaybedenIndex],
+                    kazananIndex: kaybedenIndex
+                };
             }
             return { oyunBitti: false };
         }
