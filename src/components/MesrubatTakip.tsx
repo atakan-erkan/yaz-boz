@@ -57,24 +57,20 @@ export default function MesrubatTakip({ oyunVerisi, storageKey, setOyunVerisi, a
                                 </div>
                                 <div className="mt-2">
                                     <input
-                                        type={allowDecimal ? "number" : "number"}
-                                        step={allowDecimal ? "0.01" : "1"}
-                                        min="0"
-                                        inputMode={allowDecimal ? "decimal" : "numeric"}
+                                        type="text"
+                                        inputMode="decimal"
+                                        pattern="[0-9]*[.,]?[0-9]*"
                                         placeholder="Fiyat"
                                         defaultValue={oyunVerisi.mesrubatFiyatlari?.[mesrubat.id] || ""}
                                         onClick={(e) => e.stopPropagation()}
                                         onChange={(e) => {
-                                            const value = e.target.value;
+                                            const value = e.target.value.replace(",", "."); // Virgül girilirse noktaya çevir
                                             if (allowDecimal) {
-                                                // HTML number input'un kendi ondalık desteğini kullan
                                                 handleFiyatGuncelle(mesrubat.id, parseFloat(value) || 0);
                                             } else {
-                                                // Tam sayı girişi
                                                 handleFiyatGuncelle(mesrubat.id, parseInt(value) || 0);
                                             }
                                         }}
-
                                         className="w-full p-1 text-center text-sm border border-[#D4AF37] rounded bg-[#F5E9DA] text-[#3E2723] placeholder-[#A0A0A0]"
                                         title={`${mesrubat.ad} fiyatı ${allowDecimal ? '(örn: 7.50)' : ''}`}
                                     />
